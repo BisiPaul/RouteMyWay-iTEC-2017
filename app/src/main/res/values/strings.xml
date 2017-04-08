@@ -1,4 +1,8 @@
 <resources>
     <string name="app_name">Route My Way</string>
     <string name="title_activity_maps">Map</string>
+    <string name="Button1">Viteze Medie</string>
+    <string name="Button2">Timp Stat la Semafor</string>
+    <string name="Button3">Opt3</string>
+    <string name="Button4">Opt4</string>
 </resources>
