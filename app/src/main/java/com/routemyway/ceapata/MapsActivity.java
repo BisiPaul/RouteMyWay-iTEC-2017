@@ -1,11 +1,8 @@
 package com.routemyway.ceapata;
 
-import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
@@ -22,6 +19,8 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
+
+import java.util.Calendar;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener
@@ -55,6 +54,36 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+            Thread timer = new Thread() {
+
+                public void run() {
+                    for (; ; ) {
+                        // reads the latitude,longitude and timestamp and sends it to the server
+                        try {
+                        String latitudeText, longitudeText;
+                            if (ContextCompat.checkSelfPermission(getApplicationContext(),
+                                    android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                                mLastKnownLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+                                if (mLastKnownLocation != null) {
+                                    String mytime = java.text.DateFormat.getTimeInstance().format(Calendar.getInstance().getTime());
+                                    latitudeText = String.valueOf(mLastKnownLocation.getLatitude());
+                                    longitudeText = String.valueOf(mLastKnownLocation.getLongitude());
+                                    Log.d("LATITUDE:", latitudeText);
+                                    Log.d("LONGITUDE:", longitudeText);
+                                    Log.d("LONGITUDE:", mytime);
+                                }
+                            }
+                        Thread.sleep(3000);    // sleep for 3 seconds
+                        }catch(InterruptedException e){
+                            Log.d("ERROR:",e.getMessage());
+                        }
+                    }
+                }
+            };
+            timer.start();
+
+
     }
 
     /**
@@ -85,8 +114,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     */
     @Override
     public void onConnected(Bundle connectionHint) {
+
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
     }
 
 
