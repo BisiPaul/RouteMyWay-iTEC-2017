@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "44897846568",
+    "firebase_url": "https://route-my-way-ec3bd.firebaseio.com",
+    "project_id": "route-my-way-ec3bd",
+    "storage_bucket": "route-my-way-ec3bd.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:44897846568:android:ad59754e013062e9",
+        "android_client_info": {
+          "package_name": "com.routemyway.ceapata"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "44897846568-p4sq8pcq5nj8u9qe6gl41oaltodo6c06.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.routemyway.ceapata",
+            "certificate_hash": "305aba46b3d6070d119a2bbe34f1ce8fa2cccbbe"
+          }
+        },
+        {
+          "client_id": "44897846568-mgh5fe7991be4jtojk11k1fjn76v80di.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAlm3Td5gH9rlVDAXxAe2_2BpPrp7_ksD4"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "44897846568-mgh5fe7991be4jtojk11k1fjn76v80di.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
