@@ -8,7 +8,7 @@
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context=".SignInActivity"
-    android:background="@drawable/hdpi_logo">
+    android:background="@drawable/background_p">
 
 
     <com.google.android.gms.common.SignInButton

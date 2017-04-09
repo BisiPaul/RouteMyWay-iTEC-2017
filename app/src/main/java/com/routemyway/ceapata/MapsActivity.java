@@ -11,6 +11,8 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -22,8 +24,18 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.Calendar;
+import java.util.*;
+import java.lang.*;
+import java.io.*;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener
@@ -36,11 +48,99 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private GoogleMap mMap;
     private boolean mLocationPermissionGranted;
     private Location mLastKnownLocation;
+    private Location firstKnownLocation;
     private GoogleApiClient mGoogleApiClient;
     private final LatLng mDefaultLocation = new LatLng(45.7489, 21.2087);
 
+    private double Distance = 0;
+    private double Time = 0;
+
+    private String auxLongitude;
+    private String auxLatitude;
+    private String auxTime;
+
+    public static final String USER_CHILD = "users";
+    public static final String ANONYMOUS = "anonymous";
+    private String mUsername;
+    private User user;
+
+        // Firebase instance variables
+    private FirebaseAuth mFirebaseAuth;
+    private FirebaseUser mFirebaseUser;
+    private DatabaseReference mFirebaseDatabaseReference;
+
+
+        //This function converts decimal degrees to radians
+        private double deg2rad(double deg) {
+            return (deg * Math.PI / 180.0);
+        }
+
+        //This function converts radians to decimal degrees
+        private double rad2deg(double rad) {
+            return (rad * 180 / Math.PI);
+        }
+
+        private double getDistance(double lat1, double lon1, double lat2, double lon2) {
+
+            double theta = lon1 - lon2;
+            double dist = Math.sin(deg2rad(lat1)) * Math.sin(deg2rad(lat2)) + Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.cos(deg2rad(theta));
+            dist = Math.acos(dist);
+            dist = rad2deg(dist);
+            dist = dist * 60 * 1.1515;
+
+            //pt a fi expr in km
+            dist = dist * 1.609344;
+
+            return dist;
+
+        }
+
+        public void showDistance(View view){
+            String displayedText;
+            double meterDist = Distance;
+            displayedText=String.valueOf(meterDist)+" Meters";
+            Toast toast = Toast.makeText(this, displayedText, Toast.LENGTH_LONG);
+            toast.show();
+        }
+
+
+        //regex pt timp
+        private double getTime(String str){
+            //String [] delimiter={":"," "};
+            String []time;
+            int i;
+            double seconds, minutes,hours;
+            time= str.split(":|\\s");
+
+            seconds=Double.parseDouble(time[2])/60;
+            minutes=Double.parseDouble(time[1])+seconds;
+            minutes=minutes/60;
+            hours=Double.parseDouble(time[0])+minutes;
+            return hours;
+        }
+
+        public void showTime(View view){//query din BD
+            String displayedText;
+            double minuteTime = Time*60;
+            displayedText=String.valueOf(minuteTime)+" Minutes";
+            Toast toast = Toast.makeText(this, displayedText,Toast.LENGTH_LONG);
+            toast.show();
+        }
+
+        public void showAvrgSpeed(View view){
+            String displayedText;
+            double result;
+            result = (Distance/1000)/Time;
+            displayedText=String.valueOf(result)+" Km/h";
+            Toast toast = Toast.makeText(this, displayedText,Toast.LENGTH_LONG);
+            toast.show();
+        }
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+
         super.onCreate(savedInstanceState);
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                     .enableAutoManage(this /* FragmentActivity */,
@@ -58,9 +158,21 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
+        // Set default username is anonymous.
+        mUsername = ANONYMOUS;
+
+
+        mFirebaseAuth = FirebaseAuth.getInstance();
+        mFirebaseUser = mFirebaseAuth.getCurrentUser();
+        mUsername = mFirebaseUser.getDisplayName();
+        mFirebaseDatabaseReference =  FirebaseDatabase.getInstance().getReference();
+
         Thread timer = new Thread() {
 
             public void run() {
+                boolean firstEntry = true;
+
+
                 for (; ; ) {
                     // reads the latitude,longitude and timestamp and sends it to the server
                     try {
@@ -69,12 +181,62 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                             mLastKnownLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
                             if (mLastKnownLocation != null) {
-                                String mytime = java.text.DateFormat.getTimeInstance().format(Calendar.getInstance().getTime());
-                                latitudeText = String.valueOf(mLastKnownLocation.getLatitude());
-                                longitudeText = String.valueOf(mLastKnownLocation.getLongitude());
-                                Log.d("LATITUDE:", latitudeText);
-                                Log.d("LONGITUDE:", longitudeText);
-                                Log.d("LONGITUDE:", mytime);
+                                if (firstEntry == true) {
+                                    String initLatitudeText = String.valueOf(mLastKnownLocation.getLatitude());
+                                    String initLongitudeText = String.valueOf(mLastKnownLocation.getLongitude());
+                                    String initMytime = java.text.DateFormat.getTimeInstance().format(Calendar.getInstance().getTime());
+
+                                    user = new User(mUsername, initLongitudeText, initLatitudeText, initMytime, initMytime);
+                                    mFirebaseDatabaseReference.child(USER_CHILD).push().setValue(user);
+
+                                    firstEntry = false;
+                                } else {
+                                    auxLongitude = user.getLongitude();
+                                    auxLatitude = user.getLatitude();
+                                    auxTime = user.getPresentTimestamp();
+
+                                    String mytime = java.text.DateFormat.getTimeInstance().format(Calendar.getInstance().getTime());
+                                    user.setPresentTimestamp(mytime);
+
+                                    latitudeText = String.valueOf(mLastKnownLocation.getLatitude());
+                                    user.setLatitude(latitudeText);
+
+                                    longitudeText = String.valueOf(mLastKnownLocation.getLongitude());
+                                    user.setLongitude(latitudeText);
+
+                                    mFirebaseDatabaseReference.child(USER_CHILD).child(user.getUsername()).addListenerForSingleValueEvent(
+                                            new ValueEventListener() {
+                                                @Override
+                                                public void onDataChange(DataSnapshot dataSnapshot) {
+                                                    User aux = dataSnapshot.getValue(User.class);
+                                                    //Distance = Distance + getDistance(Double.parseDouble(aux.getLatitude())
+                                                    //        ,Double.parseDouble(aux.getLongitude())
+                                                    //        ,Double.parseDouble(auxLatitude)
+                                                    //        ,Double.parseDouble(auxLongitude));
+                                                    float[] results = new float[1];
+                                                    Location.distanceBetween(Double.parseDouble(auxLatitude), Double.parseDouble(auxLongitude) ,
+                                                              Double.parseDouble(aux.getLatitude()), Double.parseDouble(aux.getLongitude()),  results);
+                                                    if(results[0]<100.0)
+                                                        Distance = Distance + results[0];
+
+                                                }
+
+                                                @Override
+                                                public void onCancelled(DatabaseError databaseError) {
+
+                                                }
+                                            });
+
+                                    mFirebaseDatabaseReference.child(USER_CHILD).child(user.getUsername()).setValue(user);
+                                    Time = getTime(user.getPresentTimestamp()) - getTime((user.getInitTimestamp()));
+                                    Log.d("TIIIIIIMP:", String.valueOf(Time));
+                                    Log.d("DIIIIIISTANTA:", String.valueOf(Distance));
+
+
+                                    Log.d("LATITUDE:", latitudeText);
+                                    Log.d("LONGITUDE:", longitudeText);
+                                    Log.d("LONGITUDE:", mytime);
+                                }
                             }
                         }
                         Thread.sleep(3000);    // sleep for 3 seconds

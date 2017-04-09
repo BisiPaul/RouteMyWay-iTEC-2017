@@ -32,6 +32,7 @@ tools:context=".MapsActivity" >
         android:textColor="@color/radioButtonText"
         android:buttonTint="@color/radioButtonTint"
         android:layout_weight="1"
+        android:onClick="showTime"
          />
     <View
         android:id="@+id/VerticalLine"
@@ -48,7 +49,9 @@ tools:context=".MapsActivity" >
         android:textStyle="bold"
         android:textColor="@color/radioButtonText"
         android:buttonTint="@color/radioButtonTint"
-        android:layout_weight="1"></RadioButton>
+        android:layout_weight="1"
+        android:onClick="showDistance">
+    </RadioButton>
 
     <View
         android:id="@+id/VerticalLine"
@@ -65,7 +68,9 @@ tools:context=".MapsActivity" >
         android:textStyle="bold"
         android:textColor="@color/radioButtonText"
         android:buttonTint="@color/radioButtonTint"
-        android:layout_weight="1"></RadioButton>
+        android:layout_weight="1"
+        android:onClick="showAvrgSpeed"
+        ></RadioButton>
 
 
 </RadioGroup>
